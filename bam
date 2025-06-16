@@ -38,7 +38,7 @@ Clear-Host
 
 Write-Host "";
 Write-Host "";
-Write-Host -ForegroundColor Red "   __ __  ____     ___  ____       ____    ____  ___ ___"
+Write-Host -ForegroundColor Red "    __  __ __  ____     ___  ____      ____    ____  ___ ___"
 Write-Host -ForegroundColor Red "  /  ]|  |  ||    \   /  _]|    \     |    \  /    ||   |   |"
 Write-Host -ForegroundColor Red " /  / |  |  ||  o  ) /  [_ |  D  )    |  o  )|  o  || _   _ |"
 Write-Host -ForegroundColor Red "/  /  |  ~  ||     ||    _]|    /     |     ||     ||  \_/  |"
