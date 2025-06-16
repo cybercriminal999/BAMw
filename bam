@@ -36,15 +36,18 @@ function Get-Signature {
 
 Clear-Host
 
+$ascii = @"
+  __  __ __  ____     ___  ____         ____    ____  ___ ___ 
+ /  ]|  |  ||    \   /  _]|    \       |    \  /    ||   |   |
+/  / |  |  ||  o  ) /  [_ |  D  )      |  o  )|  o  || _   _ |
+/  /  |  ~  ||     ||    _]|    /      |     ||     ||  \_/  |
+/   \_ |___, ||  O  ||   [_ |    \     |  O  ||  _  ||   |   |
+\     ||     ||     ||     ||  .  \    |     ||  |  ||   |   |
+ \____||____/ |_____||_____||__|\_|    |_____||__|__||___|___|
+"@
+
 Write-Host ""
-Write-Host ""
-Write-Host -ForegroundColor Red "  __  __ __  ____     ___  ____         ____    ____  ___ ___ "
-Write-Host -ForegroundColor Red " /  ]|  |  ||    \   /  _]|    \       |    \  /    ||   |   |"
-Write-Host -ForegroundColor Red "/  / |  |  ||  o  ) /  [_ |  D  )      |  o  )|  o  || _   _ |"
-Write-Host -ForegroundColor Red "/  /  |  ~  ||     ||    _]|    /      |     ||     ||  \_/  |"
-Write-Host -ForegroundColor Red "/   \_ |___, ||  O  ||   [_ |    \     |  O  ||  _  ||   |   |"
-Write-Host -ForegroundColor Red "\     ||     ||     ||     ||  .  \    |     ||  |  ||   |   |"
-Write-Host -ForegroundColor Red " \____||____/ |_____||_____||__|\_|    |_____||__|__||___|___|"
+Write-Host $ascii -ForegroundColor Red
 Write-Host ""
 Write-Host -ForegroundColor Blue "   Made by @Cyberthreats - " -NoNewLine 
 Write-Host -ForegroundColor Red "dumbass pc checking tool spent some time on this shit"
