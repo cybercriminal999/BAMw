@@ -1,113 +1,136 @@
 $ErrorActionPreference = "SilentlyContinue"
 
-Write-Host "__  __ __  ____     ___  ____       ____    ____  ___ ___ " -ForegroundColor Red
-Write-Host "   /  ]|  |  ||    \   /  _]|    \     |    \  /    ||   |   |" -ForegroundColor Red
-Write-Host "  /  / |  |  ||  o  ) /  [_ |  D  )    |  o  )|  o  || _   _ |" -ForegroundColor Red
-Write-Host " /  /  |  ~  ||     ||    _]|    /     |     ||     ||  \_/  |" -ForegroundColor Red
-Write-Host "/   \_ |___, ||  O  ||   [_ |    \     |  O  ||  _  ||   |   |" -ForegroundColor Red
-Write-Host "\     ||     ||     ||     ||  .  \    |     ||  |  ||   |   |" -ForegroundColor Red
-Write-Host " \____||____/ |_____||_____||__|\_|    |_____||__|__||___|___|" -ForegroundColor Red
-Write-Host ""
-Write-Host "   MADE BY CYBERTHREATS"
-Write-Host ""
-
 function Get-Signature {
-    param ([string]$FilePath)
-    if (-not (Test-Path $FilePath -PathType Leaf)) { return "File Was Not Found" }
-    $sig = Get-AuthenticodeSignature -FilePath $FilePath -ErrorAction SilentlyContinue
-    switch ($sig.Status) {
-        "Valid"        { return "Valid Signature" }
-        "NotSigned"    { return "Invalid Signature (NotSigned)" }
-        "HashMismatch" { return "Invalid Signature (HashMismatch)" }
-        "NotTrusted"   { return "Invalid Signature (NotTrusted)" }
-        default       { return "Invalid Signature (UnknownError)" }
+    [CmdletBinding()]
+    param (
+        [string[]]$FilePath
+    )
+
+    $Existence = Test-Path -PathType "Leaf" -Path $FilePath
+    $Authenticode = (Get-AuthenticodeSignature -FilePath $FilePath -ErrorAction SilentlyContinue).Status
+    $Signature = "Invalid Signature (UnknownError)"
+
+    if ($Existence) {
+        if ($Authenticode -eq "Valid") {
+            $Signature = "Valid Signature"
+        }
+        elseif ($Authenticode -eq "NotSigned") {
+            $Signature = "Invalid Signature (NotSigned)"
+        }
+        elseif ($Authenticode -eq "HashMismatch") {
+            $Signature = "Invalid Signature (HashMismatch)"
+        }
+        elseif ($Authenticode -eq "NotTrusted") {
+            $Signature = "Invalid Signature (NotTrusted)"
+        }
+        elseif ($Authenticode -eq "UnknownError") {
+            $Signature = "Invalid Signature (UnknownError)"
+        }
+        return $Signature
+    } else {
+        $Signature = "File Was Not Found"
+        return $Signature
     }
 }
 
+function Show-Banner {
+    Clear-Host
+    Write-Host " __ __  ____     ___  ____       ____    ____  ___ ___ " -ForegroundColor Red
+    Write-Host "   /  ]|  |  ||    \   /  _]|    \     |    \  /    ||   |   |" -ForegroundColor Red
+    Write-Host "  /  / |  |  ||  o  ) /  [_ |  D  )    |  o  )|  o  || _   _ |" -ForegroundColor Red
+    Write-Host " /  /  |  ~  ||     ||    _]|    /     |     ||     ||  \_/  |" -ForegroundColor Red
+    Write-Host "/   \_ |___, ||  O  ||   [_ |    \     |  O  ||  _  ||   |   |" -ForegroundColor Red
+    Write-Host "\     ||     ||     ||     ||  .  \    |     ||  |  ||   |   |" -ForegroundColor Red
+    Write-Host " \____||____/ |_____||_____||__|\_|    |_____||__|__||___|___|" -ForegroundColor Red
+    Write-Host ""
+    Write-Host -ForegroundColor Blue "   MADE BY CYBERTHREATS"
+    Write-Host ""
+}
+
+Show-Banner
+
 function Test-Admin {
-    $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-    return $principal.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
+    $currentUser = New-Object Security.Principal.WindowsPrincipal $([Security.Principal.WindowsIdentity]::GetCurrent())
+    $currentUser.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
 }
-
-if (-not (Test-Admin)) {
-    Write-Warning "Please run this script as Administrator."
-    Start-Sleep -Seconds 10
-    exit
+if (!(Test-Admin)) {
+    Write-Warning "Please Run This Script as Admin."
+    Start-Sleep 10
+    Exit
 }
-
-Clear-Host
 
 $sw = [Diagnostics.Stopwatch]::StartNew()
 
-if (-not (Get-PSDrive -Name HKLM -PSProvider Registry)) {
-    try { New-PSDrive -Name HKLM -PSProvider Registry -Root HKEY_LOCAL_MACHINE } catch {
-        Write-Warning "Error mounting HKEY_LOCAL_MACHINE"
-    }
+if (!(Get-PSDrive -Name HKLM -PSProvider Registry)) {
+    Try { New-PSDrive -Name HKLM -PSProvider Registry -Root HKEY_LOCAL_MACHINE }
+    Catch { Write-Warning "Error Mounting HKEY_Local_Machine" }
 }
 
-$serviceNames = @("bam", "bam\State")
-try {
-    $users = foreach ($service in $serviceNames) {
-        Get-ChildItem -Path "HKLM:\SYSTEM\CurrentControlSet\Services\$service\UserSettings\" -ErrorAction SilentlyContinue |
-        Select-Object -ExpandProperty PSChildName
+$bv = ("bam", "bam\State")
+
+Try {
+    $Users = foreach ($ii in $bv) {
+        Get-ChildItem -Path "HKLM:\SYSTEM\CurrentControlSet\Services\$($ii)\UserSettings\" | Select-Object -ExpandProperty PSChildName
     }
-} catch {
-    Write-Warning "Error parsing BAM registry keys. Possibly unsupported Windows version."
-    exit
+}
+Catch {
+    Write-Warning "Error Parsing BAM Key. Likely unsupported Windows Version"
+    Exit
 }
 
-$regPaths = @("HKLM:\SYSTEM\CurrentControlSet\Services\bam\", "HKLM:\SYSTEM\CurrentControlSet\Services\bam\state\")
+$rpath = @("HKLM:\SYSTEM\CurrentControlSet\Services\bam\", "HKLM:\SYSTEM\CurrentControlSet\Services\bam\state\")
 
-$timeZoneInfo = Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\TimeZoneInformation" -ErrorAction SilentlyContinue
-$userTimeZone = $timeZoneInfo.TimeZoneKeyName
-$userBias = $timeZoneInfo.ActiveTimeBias
-$userDaylightBias = $timeZoneInfo.DaylightBias
+$UserTime = (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\TimeZoneInformation").TimeZoneKeyName
+$UserBias = (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\TimeZoneInformation").ActiveTimeBias
+$UserDay = (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\TimeZoneInformation").DaylightBias
 
-$bamData = foreach ($sid in $users) {
-    foreach ($basePath in $regPaths) {
-        Write-Host -NoNewline "Extracting "
-        Write-Host "$basePath`UserSettings\$sid" -ForegroundColor Blue
+$BamResults = @()
 
-        $properties = Get-ItemProperty -Path "$basePath`UserSettings\$sid" -ErrorAction SilentlyContinue | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name
+foreach ($Sid in $Users) {
+    foreach ($rp in $rpath) {
+        Show-Banner
+        Write-Host -ForegroundColor Red "Extracting " -NoNewLine
+        Write-Host -ForegroundColor Blue "$($rp)UserSettings\$SID"
+        $BamItems = Get-Item -Path "$($rp)UserSettings\$Sid" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Property
 
-        try {
-            $userObj = New-Object System.Security.Principal.SecurityIdentifier($sid)
-            $userName = $userObj.Translate([System.Security.Principal.NTAccount]).Value
-        } catch {
-            $userName = "Unknown"
+        Try {
+            $objSID = New-Object System.Security.Principal.SecurityIdentifier($Sid)
+            $User = $objSID.Translate([System.Security.Principal.NTAccount])
+            $User = $User.Value
         }
+        Catch { $User = "" }
 
-        foreach ($prop in $properties) {
-            $data = Get-ItemProperty -Path "$basePath`UserSettings\$sid" -Name $prop -ErrorAction SilentlyContinue | Select-Object -ExpandProperty $prop
+        foreach ($Item in $BamItems) {
+            $Key = Get-ItemProperty -Path "$($rp)UserSettings\$Sid" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty $Item
 
-            if ($data.Length -eq 24) {
-                $hexString = [System.BitConverter]::ToString($data[7..0]) -replace '-'
-                $fileTime = [Convert]::ToInt64($hexString, 16)
+            if ($key.length -eq 24) {
+                $Hex = [System.BitConverter]::ToString($key[7..0]) -replace "-"
+                $TimeLocal = Get-Date ([DateTime]::FromFileTime([Convert]::ToInt64($Hex, 16))) -Format "yyyy-MM-dd HH:mm:ss"
+                $TimeUTC = Get-Date ([DateTime]::FromFileTimeUtc([Convert]::ToInt64($Hex, 16))) -Format "yyyy-MM-dd HH:mm:ss"
+                $Bias = -([convert]::ToInt32([Convert]::ToString($UserBias, 2), 2))
+                $Day = -([convert]::ToInt32([Convert]::ToString($UserDay, 2), 2))
+                $TimeUser = Get-Date ([DateTime]::FromFileTimeUtc([Convert]::ToInt64($Hex, 16))).AddMinutes($Bias) -Format "yyyy-MM-dd HH:mm:ss"
 
-                $localTime = ([DateTime]::FromFileTime($fileTime)).ToString("yyyy-MM-dd HH:mm:ss")
-                $utcTime = ([DateTime]::FromFileTimeUtc($fileTime)).ToString("yyyy-MM-dd HH:mm:ss")
-                $userTime = ([DateTime]::FromFileTimeUtc($fileTime)).AddMinutes(-$userBias).ToString("yyyy-MM-dd HH:mm:ss")
-
-                [PSCustomObject]@{
-                    "Examiner Time" = $localTime
-                    "Last Execution Time (UTC)" = $utcTime
-                    "Last Execution User Time" = $userTime
-                    "Application" = $prop
-                    "User" = $userName
-                    "SID" = $sid
-                    "RegPath" = $basePath
+                $obj = [PSCustomObject]@{
+                    'Examiner Time'             = $TimeLocal
+                    'Last Execution Time (UTC)' = $TimeUTC
+                    'Last Execution User Time'  = $TimeUser
+                    Application                 = ""
+                    Path                        = ""
+                    Signature                   = ""
+                    User                        = $User
+                    SID                         = $Sid
+                    Regpath                     = $rp
                 }
+                $BamResults += $obj
             }
         }
     }
 }
 
-if ($bamData) {
-    $bamData | Out-GridView -Title "BAM entries: $($bamData.Count) | TimeZone: $userTimeZone | ActiveBias: $userBias | DaylightBias: $userDaylightBias"
-} else {
-    Write-Host "No BAM entries found." -ForegroundColor Yellow
-}
+$BamResults | Out-GridView -PassThru -Title "BAM key entries $($BamResults.count)  - User TimeZone: ($UserTime) -> ActiveBias: ( $UserBias) - DayLightTime: ($UserDay)"
 
 $sw.Stop()
+$t = $sw.Elapsed.TotalMinutes
 Write-Host ""
-Write-Host ("Elapsed Time: {0:N2} minutes" -f $sw.Elapsed.TotalMinutes) -ForegroundColor Yellow
+Write-Host "Elapsed Time $t Minutes" -ForegroundColor Yellow
