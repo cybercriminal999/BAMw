@@ -106,7 +106,7 @@ $Bam = foreach ($Sid in $Users) {
                 $Day = -([convert]::ToInt32([Convert]::ToString($UserDay,2),2))
                 $Biasd = $Bias / 60
                 $Dayd = $Day / 60
-                $TimeUser = (Get-Date ([DateTime]::FromFileTimeUtc([Convert]::ToInt64($Hex, 16))).AddMinutes($Bias)) -Format "yyyy-MM-dd HH:mm:ss"
+                Get-Date (([DateTime]::FromFileTimeUtc([Convert]::ToInt64($Hex, 16))).AddMinutes($Bias)) -Format "yyyy-MM-dd HH:mm:ss"
 
                 $f = Split-Path -Leaf $Item
                 $path = ""
