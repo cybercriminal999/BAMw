@@ -1,6 +1,5 @@
 $ErrorActionPreference = "SilentlyContinue"
 
-# Banner in Red
 Write-Host "__  __ __  ____     ___  ____       ____    ____  ___ ___ " -ForegroundColor Red
 Write-Host "   /  ]|  |  ||    \   /  _]|    \     |    \  /    ||   |   |" -ForegroundColor Red
 Write-Host "  /  / |  |  ||  o  ) /  [_ |  D  )    |  o  )|  o  || _   _ |" -ForegroundColor Red
@@ -9,22 +8,19 @@ Write-Host "/   \_ |___, ||  O  ||   [_ |    \     |  O  ||  _  ||   |   |" -For
 Write-Host "\     ||     ||     ||     ||  .  \    |     ||  |  ||   |   |" -ForegroundColor Red
 Write-Host " \____||____/ |_____||_____||__|\_|    |_____||__|__||___|___|" -ForegroundColor Red
 Write-Host ""
-
 Write-Host "   MADE BY CYBERTHREATS"
 Write-Host ""
 
 function Get-Signature {
     param ([string]$FilePath)
-
     if (-not (Test-Path $FilePath -PathType Leaf)) { return "File Was Not Found" }
-
     $sig = Get-AuthenticodeSignature -FilePath $FilePath -ErrorAction SilentlyContinue
     switch ($sig.Status) {
-        "Valid"       { return "Valid Signature" }
-        "NotSigned"   { return "Invalid Signature (NotSigned)" }
-        "HashMismatch"{ return "Invalid Signature (HashMismatch)" }
-        "NotTrusted"  { return "Invalid Signature (NotTrusted)" }
-        default      { return "Invalid Signature (UnknownError)" }
+        "Valid"        { return "Valid Signature" }
+        "NotSigned"    { return "Invalid Signature (NotSigned)" }
+        "HashMismatch" { return "Invalid Signature (HashMismatch)" }
+        "NotTrusted"   { return "Invalid Signature (NotTrusted)" }
+        default       { return "Invalid Signature (UnknownError)" }
     }
 }
 
@@ -85,7 +81,6 @@ $bamData = foreach ($sid in $users) {
             $data = Get-ItemProperty -Path "$basePath`UserSettings\$sid" -Name $prop -ErrorAction SilentlyContinue | Select-Object -ExpandProperty $prop
 
             if ($data.Length -eq 24) {
-                # Convert 8 bytes from index 7 to 0 to hex (little endian)
                 $hexString = [System.BitConverter]::ToString($data[7..0]) -replace '-'
                 $fileTime = [Convert]::ToInt64($hexString, 16)
 
@@ -108,7 +103,7 @@ $bamData = foreach ($sid in $users) {
 }
 
 if ($bamData) {
-    $bamData | Out-GridView -Title "BAM key entries $($bamData.Count) - TimeZone: $userTimeZone - ActiveBias: $userBias - DaylightBias: $userDaylightBias"
+    $bamData | Out-GridView -Title "BAM entries: $($bamData.Count) | TimeZone: $userTimeZone | ActiveBias: $userBias | DaylightBias: $userDaylightBias"
 } else {
     Write-Host "No BAM entries found." -ForegroundColor Yellow
 }
